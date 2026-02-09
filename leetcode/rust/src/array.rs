@@ -84,47 +84,6 @@ pub fn next_permutation(nums: &mut Vec<i32>) {
 
 /// # 33. 搜索旋转排序数组
 pub fn search_33(nums: Vec<i32>, target: i32) -> i32 {
-    // Solution 1: Out of bounds
-    // let n = nums.len();
-    // let first = nums[0];
-    // let last = nums[n - 1];
-    // let mut left = 0;
-    // let mut right = n - 1;
-    // while left <= right {
-    //     let i = left + (right - left) / 2;
-    //     use std::cmp::Ordering::*;
-    //     match nums[i].cmp(&target) {
-    //         Equal => return i as i32,
-    //         Greater => {
-    //             if first <= nums[i] {
-    //                 if first <= target {
-    //                     return nums[0..i]
-    //                         .binary_search(&target)
-    //                         .map(|i| i as i32)
-    //                         .unwrap_or(-1);
-    //                 }
-    //                 left = i + 1;
-    //             } else {
-    //                 right = i - 1;
-    //             }
-    //         }
-    //         Less => {
-    //             if nums[i] <= last {
-    //                 if target <= last {
-    //                     return nums[i..n]
-    //                         .binary_search(&target)
-    //                         .map(|j| (i + j) as i32)
-    //                         .unwrap_or(-1);
-    //                 }
-    //                 right = i - 1;
-    //             } else {
-    //                 left = i + 1;
-    //             }
-    //         }
-    //     }
-    // }
-    // -1
-
     // Example
     let n = nums.len();
     let mut l = 0;
@@ -645,4 +604,235 @@ pub fn subsets_with_dup(nums: Vec<i32>) -> Vec<Vec<i32>> {
     let mut ans = vec![];
     dfs(&nums, false, 0, &mut buf, &mut ans);
     ans
+}
+
+/// # 120. 三角形最小路径和
+pub fn minimum_total(triangle: Vec<Vec<i32>>) -> i32 {
+    // Solution 1: Timeout
+    // fn dfs(triangle: &Vec<Vec<i32>>, depth: usize, i: usize, sum: i32, ans: &mut i32) {
+    //     if depth == triangle.len() {
+    //         *ans = sum.min(*ans);
+    //         return;
+    //     }
+    //     dfs(triangle, depth + 1, i, sum + triangle[depth][i], ans);
+    //     dfs(triangle, depth + 1, i + 1, sum + triangle[depth][i], ans);
+    // }
+    // let mut ans = i32::MAX;
+    // dfs(&triangle, 0, 0, 0, &mut ans);
+    // ans
+
+    let n = triangle.len();
+    let mut dp = Vec::with_capacity(n);
+    for i in 0..n {
+        dp.push(vec![0; i + 1]);
+    }
+    dp[0][0] = triangle[0][0];
+    for i in 1..n {
+        dp[i][0] = dp[i - 1][0] + triangle[i][0];
+        for j in 1..i {
+            dp[i][j] = std::cmp::min(dp[i - 1][j - 1], dp[i - 1][j]) + triangle[i][j];
+        }
+        dp[i][i] = dp[i - 1][i - 1] + triangle[i][i];
+    }
+    *dp[n - 1].iter().min().unwrap()
+}
+
+/// # 128. 最长连续序列
+pub fn longest_consecutive(nums: Vec<i32>) -> i32 {
+    // Solution 1: Too slow
+    // use std::collections::HashMap;
+    // let mut map = nums
+    //     .iter()
+    //     .copied()
+    //     .map(|num| (num, true))
+    //     .collect::<HashMap<_, _>>();
+    // let mut maxcnt = 0;
+    // for &num in &nums {
+    //     use std::collections::hash_map::Entry::*;
+    //     if let Occupied(mut o) = map.entry(num)
+    //         && *o.get()
+    //     {
+    //         *o.get_mut() = false;
+    //     }
+    //     let mut cnt = 1;
+    //     let mut value = num + 1;
+    //     while let Occupied(mut o) = map.entry(value)
+    //         && *o.get()
+    //     {
+    //         *o.get_mut() = false;
+    //         value += 1;
+    //         cnt += 1;
+    //     }
+    //     let mut value = num - 1;
+    //     while let Occupied(mut o) = map.entry(value)
+    //         && *o.get()
+    //     {
+    //         *o.get_mut() = false;
+    //         value -= 1;
+    //         cnt += 1;
+    //     }
+    //     maxcnt = maxcnt.max(cnt);
+    // }
+    // maxcnt
+
+    // Solution 2
+    let mut set = nums
+        .iter()
+        .copied()
+        .collect::<std::collections::HashSet<_>>();
+    let mut maxcnt = 0;
+    for &num in &nums {
+        if set.remove(&num) {
+            let mut cnt = 1;
+            let mut value = num + 1;
+            while set.remove(&value) {
+                cnt += 1;
+                value += 1;
+            }
+            let mut value = num - 1;
+            while set.remove(&value) {
+                cnt += 1;
+                value -= 1;
+            }
+            maxcnt = maxcnt.max(cnt);
+        }
+    }
+    maxcnt
+}
+
+/// # 130. 被围绕的区域
+pub fn solve(board: &mut Vec<Vec<char>>) {
+    fn dfs(board: &mut Vec<Vec<char>>, [i, j]: [usize; 2]) {
+        let m = board.len();
+        let n = board[0].len();
+        if board[i][j] == 'O' {
+            board[i][j] = '+';
+        } else {
+            return;
+        }
+        if 0 != i {
+            dfs(board, [i - 1, j]);
+        }
+        if i != m - 1 {
+            dfs(board, [i + 1, j]);
+        }
+        if 0 != j {
+            dfs(board, [i, j - 1]);
+        }
+        if j != n - 1 {
+            dfs(board, [i, j + 1]);
+        }
+    }
+    let m = board.len();
+    let n = board[0].len();
+    for i in 0..m {
+        dfs(board, [i, 0]);
+        dfs(board, [i, n - 1]);
+    }
+    for j in 0..n {
+        dfs(board, [0, j]);
+        dfs(board, [m - 1, j]);
+    }
+    for i in 0..m {
+        for j in 0..n {
+            match board[i][j] {
+                'X' | 'O' => board[i][j] = 'X',
+                '+' => board[i][j] = 'O',
+                _ => unreachable!(),
+            }
+        }
+    }
+}
+
+/// # 134. 加油站
+pub fn can_complete_circuit(gas: Vec<i32>, cost: Vec<i32>) -> i32 {
+    // Solution 1: Timeout
+    // let n = gas.len();
+    // 'outer: for i in 0..n {
+    //     let mut cnt = 0;
+    //     for j in i..i + n {
+    //         let j = j % n;
+    //         cnt += gas[j];
+    //         cnt -= cost[j];
+    //         if cnt < 0 {
+    //             continue 'outer;
+    //         }
+    //     }
+    //     return i as i32;
+    // }
+    // -1
+
+    // Solution 2
+    let n = gas.len();
+    let mut start = 0;
+    let mut len = 0;
+    let mut cnt = 0;
+    while start < n && len < n {
+        let i = (start + len) % n;
+        cnt += gas[i] - cost[i];
+        len += 1;
+        while cnt < 0 && len != 0 {
+            let i = start % n;
+            cnt -= gas[i] - cost[i];
+            start += 1;
+            len -= 1;
+        }
+    }
+    if len == n && 0 <= cnt {
+        start as i32
+    } else {
+        -1
+    }
+}
+
+/// # 137. 只出现一次的数字 II
+pub fn single_number(nums: Vec<i32>) -> i32 {
+    // Example
+    let mut a = 0;
+    let mut b = 0;
+    for &num in &nums {
+        b = !a & (b ^ num);
+        a = !b & (a ^ num);
+    }
+    b
+}
+
+/// # 139. 单词拆分
+pub fn word_break(s: String, word_dict: Vec<String>) -> bool {
+    // Solution 1: Timeout
+    // fn dfs(s: &[u8], word_dict: &Vec<String>) -> bool {
+    //     if s.len() == 0 {
+    //         return true;
+    //     }
+    //     for word in word_dict {
+    //         let word = word.as_bytes();
+    //         if let Some(s) = s.strip_prefix(word)
+    //             && dfs(s, word_dict)
+    //         {
+    //             return true;
+    //         }
+    //     }
+    //     false
+    // }
+    // let s = s.as_bytes();
+    // dfs(s, &word_dict)
+
+    // Example
+    let s = s.as_bytes();
+    let word_dict = word_dict
+        .iter()
+        .map(|word| word.as_bytes())
+        .collect::<std::collections::HashSet<_>>();
+    let n = s.len();
+    let mut dp = vec![false; n + 1];
+    dp[0] = true;
+    for i in 1..=n {
+        for j in 0..i {
+            if dp[j] && word_dict.contains(&s[j..i]) {
+                dp[i] = true;
+                break;
+            }
+        }
+    }
+    dp[n]
 }
