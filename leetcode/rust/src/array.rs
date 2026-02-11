@@ -836,3 +836,200 @@ pub fn word_break(s: String, word_dict: Vec<String>) -> bool {
     }
     dp[n]
 }
+
+/// # 152. 乘积最大子数组
+pub fn max_product(nums: Vec<i32>) -> i32 {
+    // Example
+    nums[1..]
+        .iter()
+        .copied()
+        .fold([nums[0]; 3], |[max, min, ans], num| {
+            let [max, min] = [
+                *[max * num, min * num, num].iter().max().unwrap(),
+                *[max * num, min * num, num].iter().min().unwrap(),
+            ];
+            [max, min, ans.max(max)]
+        })[2]
+}
+
+/// # 153. 寻找旋转排序数组中的最小值
+pub fn find_min(nums: Vec<i32>) -> i32 {
+    let n = nums.len();
+    let mut l = 0;
+    let mut r = n - 1;
+    while l < r {
+        let i = l + (r - l) / 2;
+        if nums[i] < nums[r] {
+            r = i;
+        } else {
+            l = i + 1;
+        }
+    }
+    nums[l]
+}
+
+/// # 164. 最大间距
+pub fn maximum_gap(nums: Vec<i32>) -> i32 {
+    // Solution 1
+    // let n = nums.len();
+    // if n < 2 {
+    //     return 0;
+    // }
+    // let mut nums = nums;
+    // nums.sort();
+    // let mut max = i32::MIN;
+    // for i in 1..n {
+    //     max = max.max(nums[i] - nums[i - 1]);
+    // }
+    // max
+
+    // Example 1
+    // let mut nums = nums;
+    // let n = nums.len();
+    // if n < 2 {
+    //     return 0;
+    // }
+    // let mut nums = &mut nums;
+    // let mut buf = &mut vec![0; n];
+    // let max = *nums.iter().max().unwrap();
+    // let mut exp = 1;
+    // while max >= exp {
+    //     let mut cnt = [0; 10];
+    //     for &num in nums.iter() {
+    //         let digit = ((num / exp) % 10) as usize;
+    //         cnt[digit] += 1;
+    //     }
+    //     for i in 1..10 {
+    //         cnt[i] += cnt[i - 1];
+    //     }
+    //     for &num in nums.iter().rev() {
+    //         let digit = ((num / exp) % 10) as usize;
+    //         cnt[digit] -= 1;
+    //         buf[cnt[digit]] = num;
+    //     }
+    //     (nums, buf) = (buf, nums);
+    //     exp *= 10;
+    // }
+    // let mut ans = i32::MIN;
+    // for i in 1..n {
+    //     ans = ans.max(nums[i] - nums[i - 1]);
+    // }
+    // ans
+
+    // Example 2
+    let n = nums.len();
+    if n < 2 {
+        return 0;
+    }
+    let mut min = i32::MAX;
+    let mut max = i32::MIN;
+    for &num in &nums {
+        min = num.min(min);
+        max = num.max(max);
+    }
+    if min == max {
+        return 0;
+    }
+    let diff = (max - min) as usize;
+    let size = diff.div_ceil(n);
+    let cnt = diff / size + 1;
+    let mut buckets = vec![None::<[i32; 2]>; cnt];
+    for &num in &nums {
+        let i = (num - min) as usize / size;
+        let [min, max] = buckets[i].get_or_insert([num; 2]);
+        *min = num.min(*min);
+        *max = num.max(*max);
+    }
+    let mut ans = 0;
+    let [_, mut prev_max] = buckets[0].unwrap();
+    for i in 1..cnt {
+        if let Some([curr_min, curr_max]) = buckets[i] {
+            ans = ans.max(curr_min - prev_max);
+            prev_max = curr_max;
+        }
+    }
+    ans
+}
+
+/// # 167. 两数之和 II - 输入有序数组
+pub fn two_sum(numbers: Vec<i32>, target: i32) -> Vec<i32> {
+    let n = numbers.len();
+    let mut l = 0;
+    let mut r = n - 1;
+    loop {
+        use std::cmp::Ordering::*;
+        let sum = numbers[l] + numbers[r];
+        match sum.cmp(&target) {
+            Equal => return vec![l as i32 + 1, r as i32 + 1],
+            Less => l += 1,
+            Greater => r -= 1,
+        }
+    }
+}
+
+/// # 179. 最大数
+pub fn largest_number(nums: Vec<i32>) -> String {
+    // Example
+    let nums = nums.iter().map(i32::to_string).collect::<Vec<_>>();
+    let mut nums = nums.iter().map(String::as_bytes).collect::<Vec<_>>();
+    nums.sort_by(|num1, num2| {
+        let s1 = num1.iter().chain(num2.iter()).copied();
+        let s2 = num2.iter().chain(num1.iter()).copied();
+        for (b1, b2) in s1.zip(s2) {
+            if b1 != b2 {
+                // Notice the sequence of b1 and b2
+                return b2.cmp(&b1);
+            }
+        }
+        std::cmp::Ordering::Equal
+    });
+    if nums[0] == b"0" {
+        return String::from("0");
+    }
+    unsafe { String::from_utf8_unchecked(nums.join(&[][..])) }
+}
+
+/// # 209. 长度最小的子数组
+pub fn min_sub_array_len(target: i32, nums: Vec<i32>) -> i32 {
+    // Solution 1
+    let n = nums.len();
+    let mut l = 0;
+    let mut r = 0;
+    let mut sum = 0;
+    let mut min = None;
+    while r < n {
+        while r < n && sum < target {
+            sum += nums[r];
+            r += 1;
+        }
+        if sum < target {
+            break;
+        }
+        while l < r && target <= sum {
+            sum -= nums[l];
+            l += 1;
+        }
+        let diff = r - l + 1;
+        let min = min.get_or_insert(diff);
+        *min = diff.min(*min);
+    }
+    min.unwrap_or(0) as i32
+}
+
+/// # 213. 打家劫舍 II
+pub fn rob(nums: Vec<i32>) -> i32 {
+    match nums.len() {
+        0 => 0,
+        1 => nums[0],
+        2 => nums[0].max(nums[1]),
+        n => {
+            let [y1, n1] = nums[2..n]
+                .iter()
+                .fold([nums[1], 0], |[y, n], &num| [n + num, y.max(n)]);
+            let [y2, n2] = nums[1..n - 1]
+                .iter()
+                .fold([nums[0], 0], |[y, n], &num| [n + num, y.max(n)]);
+            *[y1, n1, y2, n2].iter().max().unwrap()
+        }
+    }
+}
