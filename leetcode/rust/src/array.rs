@@ -1033,3 +1033,43 @@ pub fn rob(nums: Vec<i32>) -> i32 {
         }
     }
 }
+
+/// # 216. 组合总和 III
+pub fn combination_sum3(k: i32, n: i32) -> Vec<Vec<i32>> {
+    fn dfs(pre: i32, k: i32, n: i32, buf: &mut Vec<i32>, ans: &mut Vec<Vec<i32>>) {
+        if k == 0 && n == 0 {
+            ans.push(buf.clone());
+            return;
+        }
+        for i in (pre + 1)..=(9.min(n)) {
+            buf.push(i as i32);
+            dfs(i, k - 1, n - i, buf, ans);
+            buf.pop();
+        }
+    }
+    let mut buf = vec![];
+    let mut ans = vec![];
+    dfs(0, k, n, &mut buf, &mut ans);
+    ans
+}
+
+/// # 221. 最大正方形
+pub fn maximal_square(matrix: Vec<Vec<char>>) -> i32 {
+    let m = matrix.len();
+    let n = matrix[0].len();
+    let mut ans = 0;
+    let mut dp = vec![vec![0; n + 1]; m + 1];
+    for i in 1..=m {
+        for j in 1..=n {
+            if matrix[i - 1][j - 1] == '1' {
+                dp[i][j] = *[dp[i - 1][j - 1], dp[i - 1][j], dp[i][j - 1]]
+                    .iter()
+                    .min()
+                    .unwrap()
+                    + 1;
+                ans = ans.max(dp[i][j]);
+            }
+        }
+    }
+    ans * ans
+}
